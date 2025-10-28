@@ -3,6 +3,11 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 interface ProductCardProps {
   id: string;
@@ -22,6 +27,47 @@ export const ProductCard = ({
   categoryName 
 }: ProductCardProps) => {
   const isOnSale = originalPrice && originalPrice > price;
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const addToCartMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) {
+        navigate('/auth');
+        throw new Error('Please sign in to add items to cart');
+      }
+      
+      const { data: existing } = await supabase
+        .from('cart_items')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('product_id', id)
+        .maybeSingle();
+
+      if (existing) {
+        const { error } = await supabase
+          .from('cart_items')
+          .update({ quantity: existing.quantity + 1 })
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('cart_items')
+          .insert({ user_id: user.id, product_id: id, quantity: 1 });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart-count'] });
+      toast.success('Added to cart!');
+    },
+    onError: (error: any) => {
+      if (error.message !== 'Please sign in to add items to cart') {
+        toast.error(error.message || 'Failed to add to cart');
+      }
+    },
+  });
 
   return (
     <Card className="overflow-hidden hover-scale group">
@@ -58,7 +104,14 @@ export const ProductCard = ({
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0">
-        <Button className="w-full" variant="default">
+        <Button 
+          className="w-full" 
+          variant="default"
+          onClick={(e) => {
+            e.preventDefault();
+            addToCartMutation.mutate();
+          }}
+        >
           <ShoppingCart className="h-4 w-4 mr-2" />
           Add to Cart
         </Button>
