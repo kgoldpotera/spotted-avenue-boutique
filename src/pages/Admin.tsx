@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Pencil, Trash2, Plus } from 'lucide-react';
+import { Pencil, Trash2, Plus, Upload, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 
@@ -20,6 +20,9 @@ const Admin = () => {
   const queryClient = useQueryClient();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -107,6 +110,40 @@ const Admin = () => {
     },
   });
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size must be less than 5MB');
+        return;
+      }
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImage = async (file: File): Promise<string> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+    const filePath = fileName;
+
+    const { error: uploadError } = await supabase.storage
+      .from('product-images')
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  };
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -118,22 +155,45 @@ const Admin = () => {
       stock: '',
       is_featured: false,
     });
+    setImageFile(null);
+    setImagePreview('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const productData = {
-      ...formData,
-      price: parseFloat(formData.price),
-      original_price: formData.original_price ? parseFloat(formData.original_price) : null,
-      stock: parseInt(formData.stock),
-    };
+    try {
+      setIsUploading(true);
+      let imageUrl = formData.image_url;
 
-    if (editingProduct) {
-      updateProductMutation.mutate({ id: editingProduct.id, data: productData });
-    } else {
-      addProductMutation.mutate(productData);
+      // Upload new image if selected
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile);
+      }
+
+      if (!imageUrl) {
+        toast.error('Please select an image');
+        setIsUploading(false);
+        return;
+      }
+
+      const productData = {
+        ...formData,
+        image_url: imageUrl,
+        price: parseFloat(formData.price),
+        original_price: formData.original_price ? parseFloat(formData.original_price) : null,
+        stock: parseInt(formData.stock),
+      };
+
+      if (editingProduct) {
+        updateProductMutation.mutate({ id: editingProduct.id, data: productData });
+      } else {
+        addProductMutation.mutate(productData);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to upload image');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -149,6 +209,8 @@ const Admin = () => {
       stock: product.stock.toString(),
       is_featured: product.is_featured,
     });
+    setImagePreview(product.image_url);
+    setImageFile(null);
   };
 
   if (loading) {
@@ -240,14 +302,54 @@ const Admin = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="image_url">Image URL</Label>
-                  <Input
-                    id="image_url"
-                    value={formData.image_url}
-                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                    placeholder="https://example.com/image.jpg"
-                    required
-                  />
+                  <Label htmlFor="image">Product Image</Label>
+                  <div className="space-y-4">
+                    {imagePreview && (
+                      <div className="relative w-full h-48 border rounded-lg overflow-hidden">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2"
+                          onClick={() => {
+                            setImageFile(null);
+                            setImagePreview('');
+                            setFormData({ ...formData, image_url: '' });
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="image"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                      <Label
+                        htmlFor="image"
+                        className="flex-1 cursor-pointer"
+                      >
+                        <div className="flex items-center justify-center gap-2 border-2 border-dashed rounded-lg p-6 hover:border-primary transition-colors">
+                          <Upload className="h-5 w-5" />
+                          <span>
+                            {imageFile ? imageFile.name : 'Click to upload image'}
+                          </span>
+                        </div>
+                      </Label>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Max file size: 5MB. Supported formats: JPG, PNG, WEBP
+                    </p>
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="stock">Stock Quantity</Label>
@@ -267,8 +369,8 @@ const Admin = () => {
                   />
                   <Label htmlFor="is_featured">Featured Product</Label>
                 </div>
-                <Button type="submit" className="w-full">
-                  {editingProduct ? 'Update Product' : 'Add Product'}
+                <Button type="submit" className="w-full" disabled={isUploading}>
+                  {isUploading ? 'Uploading...' : editingProduct ? 'Update Product' : 'Add Product'}
                 </Button>
               </form>
             </DialogContent>
