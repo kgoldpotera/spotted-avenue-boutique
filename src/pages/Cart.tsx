@@ -3,15 +3,21 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Trash2, Plus, Minus } from 'lucide-react';
+import { Trash2, Plus, Minus, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 
 const Cart = () => {
   const { user, loading } = useAuth();
   const queryClient = useQueryClient();
+  const [customerName, setCustomerName] = useState('');
+  const [shippingAddress, setShippingAddress] = useState('');
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   const { data: cartItems } = useQuery({
     queryKey: ['cart', user?.id],
@@ -56,6 +62,49 @@ const Cart = () => {
       toast.success('Item removed from cart');
     },
   });
+
+  const handleCheckout = async () => {
+    if (!customerName.trim()) {
+      toast.error('Please enter your name');
+      return;
+    }
+
+    setIsCheckingOut(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const cartData = cartItems?.map(item => ({
+        product_id: item.products.id,
+        product_name: item.products.name,
+        product_price: item.products.price,
+        product_image: item.products.image_url,
+        quantity: item.quantity,
+      }));
+
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          cartItems: cartData,
+          total: total,
+          customerName: customerName.trim(),
+          shippingAddress: shippingAddress.trim() || null,
+        },
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      console.error('Checkout error:', error);
+      toast.error(error.message || 'Failed to create checkout session');
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
 
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
@@ -109,7 +158,7 @@ const Cart = () => {
                           {item.products.categories?.name}
                         </p>
                         <p className="font-semibold text-primary">
-                          €{item.products.price.toFixed(2)}
+                          £{item.products.price.toFixed(2)}
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-4">
@@ -163,7 +212,7 @@ const Cart = () => {
                   <div className="space-y-2 mb-4">
                     <div className="flex justify-between">
                       <span>Subtotal</span>
-                      <span>€{total.toFixed(2)}</span>
+                      <span>£{total.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Shipping</span>
@@ -171,11 +220,46 @@ const Cart = () => {
                     </div>
                     <div className="border-t pt-2 flex justify-between font-bold text-lg">
                       <span>Total</span>
-                      <span className="text-primary">€{total.toFixed(2)}</span>
+                      <span className="text-primary">£{total.toFixed(2)}</span>
                     </div>
                   </div>
-                  <Button className="w-full" size="lg">
-                    Proceed to Checkout
+
+                  <div className="space-y-4 mt-6 mb-4">
+                    <div>
+                      <Label htmlFor="customerName">Full Name *</Label>
+                      <Input
+                        id="customerName"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        placeholder="Enter your full name"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="shippingAddress">Shipping Address (Optional)</Label>
+                      <Input
+                        id="shippingAddress"
+                        value={shippingAddress}
+                        onChange={(e) => setShippingAddress(e.target.value)}
+                        placeholder="Enter shipping address"
+                      />
+                    </div>
+                  </div>
+
+                  <Button 
+                    className="w-full" 
+                    size="lg" 
+                    onClick={handleCheckout}
+                    disabled={isCheckingOut}
+                  >
+                    {isCheckingOut ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      'Proceed to Checkout'
+                    )}
                   </Button>
                 </CardContent>
               </Card>

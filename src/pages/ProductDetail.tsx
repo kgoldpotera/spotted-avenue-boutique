@@ -170,11 +170,11 @@ const ProductDetail = () => {
               </div>
             )}
             <div className="flex items-center gap-4 mb-6">
-              <span className="text-3xl font-bold text-primary">€{product.price}</span>
+              <span className="text-3xl font-bold text-primary">GBP{product.price}</span>
               {isOnSale && (
                 <>
                   <span className="text-xl line-through text-muted-foreground">
-                    €{product.original_price}
+                    GBP{product.original_price}
                   </span>
                   <Badge variant="destructive">Sale</Badge>
                 </>

@@ -1,23 +1,26 @@
-import { Link } from 'react-router-dom';
-import { ShoppingCart, User, LogOut, Settings } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
-import { Badge } from '@/components/ui/badge';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { Link } from "react-router-dom";
+import { ShoppingCart, User, LogOut, Settings, Menu } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useState } from "react";
 
 export const Navbar = () => {
   const { user, isAdmin, isSuperAdmin, signOut } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const { data: cartCount } = useQuery({
-    queryKey: ['cart-count', user?.id],
+    queryKey: ["cart-count", user?.id],
     queryFn: async () => {
       if (!user) return 0;
       const { data, error } = await supabase
-        .from('cart_items')
-        .select('quantity')
-        .eq('user_id', user.id);
-      
+        .from("cart_items")
+        .select("quantity")
+        .eq("user_id", user.id);
+
       if (error) return 0;
       return data.reduce((sum, item) => sum + item.quantity, 0);
     },
@@ -29,32 +32,137 @@ export const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="text-2xl font-bold text-primary">
-            DesignerCollective
+            DesignerCollections
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
-            <Link to="/products/bags" className="hover:text-primary transition-colors">
+            <Link
+              to="/products/bags"
+              className="hover:text-primary transition-colors"
+            >
               Bags
             </Link>
-            <Link to="/products/clothes" className="hover:text-primary transition-colors">
+            <Link
+              to="/products/clothes"
+              className="hover:text-primary transition-colors"
+            >
               Clothes
             </Link>
-            <Link to="/products/shoes" className="hover:text-primary transition-colors">
+            <Link
+              to="/products/shoes"
+              className="hover:text-primary transition-colors"
+            >
               Shoes
             </Link>
-            <Link to="/products/accessories" className="hover:text-primary transition-colors">
+            <Link
+              to="/products/accessories"
+              className="hover:text-primary transition-colors"
+            >
               Accessories
             </Link>
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Mobile Menu */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild className="md:hidden">
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-64">
+                <div className="flex flex-col gap-6 mt-8">
+                  <Link
+                    to="/products/bags"
+                    className="text-lg hover:text-primary transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Bags
+                  </Link>
+                  <Link
+                    to="/products/clothes"
+                    className="text-lg hover:text-primary transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Clothes
+                  </Link>
+                  <Link
+                    to="/products/shoes"
+                    className="text-lg hover:text-primary transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Shoes
+                  </Link>
+                  <Link
+                    to="/products/accessories"
+                    className="text-lg hover:text-primary transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Accessories
+                  </Link>
+
+                  {user && (isAdmin || isSuperAdmin) && (
+                    <>
+                      <Link
+                        to={isSuperAdmin ? "/super-admin" : "/admin"}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Button
+                          variant="secondary"
+                          className="w-full justify-start"
+                        >
+                          <Settings className="h-4 w-4 mr-2" />
+                          {isSuperAdmin ? "Super Admin" : "Admin"}
+                        </Button>
+                      </Link>
+                      <Link
+                        to="/order-management"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start"
+                        >
+                          Orders
+                        </Button>
+                      </Link>
+                    </>
+                  )}
+                  {user && !isAdmin && !isSuperAdmin && (
+                    <Link to="/orders" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-start">
+                        My Orders
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+
             {user ? (
               <>
                 {(isAdmin || isSuperAdmin) && (
-                  <Link to={isSuperAdmin ? "/super-admin" : "/admin"}>
-                    <Button variant="secondary" size="sm">
-                      <Settings className="h-4 w-4 mr-2" />
-                      {isSuperAdmin ? 'Super Admin' : 'Admin'}
+                  <>
+                    <Link
+                      to={isSuperAdmin ? "/super-admin" : "/admin"}
+                      className="hidden md:block"
+                    >
+                      <Button variant="secondary" size="sm">
+                        <Settings className="h-4 w-4 mr-2" />
+                        {isSuperAdmin ? "Super Admin" : "Admin"}
+                      </Button>
+                    </Link>
+                    <Link to="/order-management" className="hidden md:block">
+                      <Button variant="ghost" size="sm">
+                        Orders
+                      </Button>
+                    </Link>
+                  </>
+                )}
+                {user && !isAdmin && !isSuperAdmin && (
+                  <Link to="/orders" className="hidden md:block">
+                    <Button variant="ghost" size="sm">
+                      My Orders
                     </Button>
                   </Link>
                 )}
