@@ -158,7 +158,7 @@ const Cart = () => {
                           {item.products.categories?.name}
                         </p>
                         <p className="font-semibold text-primary">
-                          ${item.products.price.toFixed(2)}
+                          £{item.products.price.toFixed(2)}
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-4">
@@ -212,7 +212,7 @@ const Cart = () => {
                   <div className="space-y-2 mb-4">
                     <div className="flex justify-between">
                       <span>Subtotal</span>
-                      <span>${total.toFixed(2)}</span>
+                      <span>£{total.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Shipping</span>
