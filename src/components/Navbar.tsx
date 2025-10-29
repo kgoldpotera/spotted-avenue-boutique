@@ -90,13 +90,33 @@ export const Navbar = () => {
                   </Link>
                   
                   {user && (isAdmin || isSuperAdmin) && (
+                    <>
+                      <Link 
+                        to={isSuperAdmin ? "/super-admin" : "/admin"}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Button variant="secondary" className="w-full justify-start">
+                          <Settings className="h-4 w-4 mr-2" />
+                          {isSuperAdmin ? 'Super Admin' : 'Admin'}
+                        </Button>
+                      </Link>
+                      <Link 
+                        to="/order-management"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Button variant="ghost" className="w-full justify-start">
+                          Orders
+                        </Button>
+                      </Link>
+                    </>
+                  )}
+                  {user && !isAdmin && !isSuperAdmin && (
                     <Link 
-                      to={isSuperAdmin ? "/super-admin" : "/admin"}
+                      to="/orders"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      <Button variant="secondary" className="w-full justify-start">
-                        <Settings className="h-4 w-4 mr-2" />
-                        {isSuperAdmin ? 'Super Admin' : 'Admin'}
+                      <Button variant="ghost" className="w-full justify-start">
+                        My Orders
                       </Button>
                     </Link>
                   )}
@@ -107,10 +127,24 @@ export const Navbar = () => {
             {user ? (
               <>
                 {(isAdmin || isSuperAdmin) && (
-                  <Link to={isSuperAdmin ? "/super-admin" : "/admin"} className="hidden md:block">
-                    <Button variant="secondary" size="sm">
-                      <Settings className="h-4 w-4 mr-2" />
-                      {isSuperAdmin ? 'Super Admin' : 'Admin'}
+                  <>
+                    <Link to={isSuperAdmin ? "/super-admin" : "/admin"} className="hidden md:block">
+                      <Button variant="secondary" size="sm">
+                        <Settings className="h-4 w-4 mr-2" />
+                        {isSuperAdmin ? 'Super Admin' : 'Admin'}
+                      </Button>
+                    </Link>
+                    <Link to="/order-management" className="hidden md:block">
+                      <Button variant="ghost" size="sm">
+                        Orders
+                      </Button>
+                    </Link>
+                  </>
+                )}
+                {user && !isAdmin && !isSuperAdmin && (
+                  <Link to="/orders" className="hidden md:block">
+                    <Button variant="ghost" size="sm">
+                      My Orders
                     </Button>
                   </Link>
                 )}
