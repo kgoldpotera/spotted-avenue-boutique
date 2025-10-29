@@ -95,10 +95,10 @@ export const ProductCard = ({
           </h3>
         </Link>
         <div className="flex items-center gap-2">
-          <span className="text-xl font-bold text-primary">€{price.toFixed(2)}</span>
+          <span className="text-xl font-bold text-primary">GBP{price.toFixed(2)}</span>
           {isOnSale && (
             <span className="text-sm line-through text-muted-foreground">
-              €{originalPrice.toFixed(2)}
+              GBP{originalPrice.toFixed(2)}
             </span>
           )}
         </div>
