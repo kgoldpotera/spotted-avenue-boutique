@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
+import concertAd from '@/assets/concert-ad.jpeg';
 
 const Home = () => {
   const { data: featuredProducts } = useQuery({
@@ -41,6 +42,31 @@ const Home = () => {
       
       <main className="container mx-auto px-4 py-8">
         <HeroSlider />
+
+        {/* Designer Outlet Banner */}
+        <section className="mt-8">
+          <div className="bg-primary text-primary-foreground rounded-lg py-6 px-8 text-center">
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
+              Designer Outlet
+            </h2>
+          </div>
+        </section>
+
+        {/* Concert Ad Banner */}
+        <section className="mt-8">
+          <a 
+            href="https://thechampionshipstadiumconcerts.com" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="block rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
+          >
+            <img 
+              src={concertAd} 
+              alt="The Championship Stadium Concerts by SitaAlexandra" 
+              className="w-full h-auto"
+            />
+          </a>
+        </section>
 
         {featuredProducts && featuredProducts.length > 0 && (
           <section className="mt-16">
