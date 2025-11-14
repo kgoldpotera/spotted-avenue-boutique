@@ -12,6 +12,7 @@ import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import Orders from "./pages/Orders";
 import OrderManagement from "./pages/OrderManagement";
+import Products from "./pages/Products";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,8 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/super-admin" element={<SuperAdmin />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/products/:category" element={<Products />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/orders" element={<Orders />} />

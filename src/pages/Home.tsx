@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
+import concertAd from '@/assets/concert-ad.jpeg';
 
 const Home = () => {
   const { data: featuredProducts } = useQuery({
@@ -100,6 +101,31 @@ const Home = () => {
               Shop All Products
             </Button>
           </Link>
+        </section>
+
+        {/* Designer Outlet Banner - Footer */}
+        <section className="mt-16 border-t pt-8">
+          <div className="text-center py-4">
+            <p className="text-sm text-muted-foreground font-medium tracking-wide">
+              Designer Outlet
+            </p>
+          </div>
+        </section>
+
+        {/* Concert Ad - Footer */}
+        <section className="mt-4 mb-8">
+          <a 
+            href="https://thechampionshipstadiumconcerts.com" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="block rounded overflow-hidden hover:opacity-80 transition-opacity max-w-2xl mx-auto"
+          >
+            <img 
+              src={concertAd} 
+              alt="The Championship Stadium Concerts by SitaAlexandra" 
+              className="w-full h-auto opacity-90"
+            />
+          </a>
         </section>
       </main>
     </div>
