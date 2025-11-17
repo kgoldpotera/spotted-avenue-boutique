@@ -27,6 +27,20 @@ export const Navbar = () => {
     enabled: !!user,
   });
 
+  const { data: mainCategories } = useQuery({
+    queryKey: ["main-categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .is("parent_id", null)
+        .order("name");
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
   return (
     <nav className="border-b bg-card shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4">
@@ -36,70 +50,37 @@ export const Navbar = () => {
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
-            <Link
-              to="/products/bags"
-              className="hover:text-primary transition-colors"
-            >
-              Bags
-            </Link>
-            <Link
-              to="/products/clothes"
-              className="hover:text-primary transition-colors"
-            >
-              Clothes
-            </Link>
-            <Link
-              to="/products/shoes"
-              className="hover:text-primary transition-colors"
-            >
-              Shoes
-            </Link>
-            <Link
-              to="/products/accessories"
-              className="hover:text-primary transition-colors"
-            >
-              Accessories
-            </Link>
+            {mainCategories?.map((category) => (
+              <Link
+                key={category.id}
+                to={`/products/${category.slug}`}
+                className="hover:text-primary transition-colors"
+              >
+                {category.name}
+              </Link>
+            ))}
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Mobile Menu */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild className="md:hidden">
                 <Button variant="ghost" size="icon">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
+
               <SheetContent side="right" className="w-64">
                 <div className="flex flex-col gap-6 mt-8">
-                  <Link
-                    to="/products/bags"
-                    className="text-lg hover:text-primary transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Bags
-                  </Link>
-                  <Link
-                    to="/products/clothes"
-                    className="text-lg hover:text-primary transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Clothes
-                  </Link>
-                  <Link
-                    to="/products/shoes"
-                    className="text-lg hover:text-primary transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Shoes
-                  </Link>
-                  <Link
-                    to="/products/accessories"
-                    className="text-lg hover:text-primary transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Accessories
-                  </Link>
+                  {mainCategories?.map((category) => (
+                    <Link
+                      key={category.id}
+                      to={`/products/${category.slug}`}
+                      className="text-lg hover:text-primary transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {category.name}
+                    </Link>
+                  ))}
 
                   {user && (isAdmin || isSuperAdmin) && (
                     <>
@@ -115,6 +96,7 @@ export const Navbar = () => {
                           {isSuperAdmin ? "Super Admin" : "Admin"}
                         </Button>
                       </Link>
+
                       <Link
                         to="/order-management"
                         onClick={() => setMobileMenuOpen(false)}
@@ -128,6 +110,7 @@ export const Navbar = () => {
                       </Link>
                     </>
                   )}
+
                   {user && !isAdmin && !isSuperAdmin && (
                     <Link to="/orders" onClick={() => setMobileMenuOpen(false)}>
                       <Button variant="ghost" className="w-full justify-start">
@@ -152,6 +135,7 @@ export const Navbar = () => {
                         {isSuperAdmin ? "Super Admin" : "Admin"}
                       </Button>
                     </Link>
+
                     <Link to="/order-management" className="hidden md:block">
                       <Button variant="ghost" size="sm">
                         Orders
@@ -159,6 +143,7 @@ export const Navbar = () => {
                     </Link>
                   </>
                 )}
+
                 {user && !isAdmin && !isSuperAdmin && (
                   <Link to="/orders" className="hidden md:block">
                     <Button variant="ghost" size="sm">
@@ -166,6 +151,7 @@ export const Navbar = () => {
                     </Button>
                   </Link>
                 )}
+
                 <Link to="/cart" className="relative">
                   <Button variant="ghost" size="icon">
                     <ShoppingCart className="h-5 w-5" />
@@ -176,6 +162,7 @@ export const Navbar = () => {
                     )}
                   </Button>
                 </Link>
+
                 <Button variant="ghost" size="icon" onClick={() => signOut()}>
                   <LogOut className="h-5 w-5" />
                 </Button>
