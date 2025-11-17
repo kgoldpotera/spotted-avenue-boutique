@@ -24,6 +24,7 @@ const Admin = () => {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
 
+  const [selectedMainCategory, setSelectedMainCategory] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -60,6 +61,12 @@ const Admin = () => {
       return data;
     },
   });
+
+  // Filter main categories (no parent_id)
+  const mainCategories = categories?.filter(cat => !cat.parent_id) || [];
+  
+  // Filter subcategories based on selected main category
+  const subcategories = categories?.filter(cat => cat.parent_id === selectedMainCategory) || [];
 
   const addProductMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -157,6 +164,8 @@ const Admin = () => {
     });
     setImageFile(null);
     setImagePreview('');
+    setEditingProduct(null);
+    setSelectedMainCategory('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -199,6 +208,12 @@ const Admin = () => {
 
   const startEdit = (product: any) => {
     setEditingProduct(product);
+    
+    // Find the parent category of the product's category
+    const productCategory = categories?.find(cat => cat.id === product.category_id);
+    const parentCategoryId = productCategory?.parent_id || '';
+    
+    setSelectedMainCategory(parentCategoryId);
     setFormData({
       name: product.name,
       description: product.description || '',
@@ -286,20 +301,47 @@ const Admin = () => {
                     />
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="category">Category</Label>
-                  <Select value={formData.category_id} onValueChange={(value) => setFormData({ ...formData, category_id: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories?.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="mainCategory">Main Category</Label>
+                    <Select 
+                      value={selectedMainCategory} 
+                      onValueChange={(value) => {
+                        setSelectedMainCategory(value);
+                        setFormData({ ...formData, category_id: '' });
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select main category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {mainCategories?.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="subcategory">Subcategory</Label>
+                    <Select 
+                      value={formData.category_id} 
+                      onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                      disabled={!selectedMainCategory}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={selectedMainCategory ? "Select subcategory" : "Select main category first"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subcategories?.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="image">Product Image</Label>

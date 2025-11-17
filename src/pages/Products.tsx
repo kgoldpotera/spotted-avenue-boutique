@@ -16,8 +16,10 @@ const Products = () => {
         .select(`
           *,
           categories (
+            id,
             name,
-            slug
+            slug,
+            parent_id
           )
         `);
 
@@ -25,8 +27,30 @@ const Products = () => {
       if (category === "sale") {
         query = query.not("original_price", "is", null);
       } else if (category && category !== "all") {
-        // Filter by category slug for regular categories
-        query = query.eq("categories.slug", category);
+        // First, find the category by slug
+        const { data: categoryData } = await supabase
+          .from("categories")
+          .select("id, parent_id")
+          .eq("slug", category)
+          .single();
+
+        if (categoryData) {
+          // If it's a main category (parent_id is null), get all products from its subcategories
+          if (!categoryData.parent_id) {
+            const { data: subcategories } = await supabase
+              .from("categories")
+              .select("id")
+              .eq("parent_id", categoryData.id);
+
+            if (subcategories && subcategories.length > 0) {
+              const subcategoryIds = subcategories.map(sub => sub.id);
+              query = query.in("category_id", subcategoryIds);
+            }
+          } else {
+            // If it's a subcategory, filter by that specific category
+            query = query.eq("category_id", categoryData.id);
+          }
+        }
       }
       // If category is "all" or undefined, show all products
 
